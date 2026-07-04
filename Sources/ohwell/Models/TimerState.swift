@@ -71,7 +71,8 @@ final class TimerState {
         switch currentPhase {
         case .work:
             completedSessions += 1
-            if completedSessions % sessionsBeforeLongBreak == 0 {
+            let interval = max(1, sessionsBeforeLongBreak)
+            if completedSessions % interval == 0 {
                 currentPhase = .longBreak
                 secondsRemaining = longBreakDuration
             } else {

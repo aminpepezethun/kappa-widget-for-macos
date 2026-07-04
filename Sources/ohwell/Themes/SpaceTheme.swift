@@ -8,7 +8,7 @@ struct SpaceTheme: Theme {
     ]
     let accentColor = Color(red: 0.55, green: 0.47, blue: 0.97)
     let completionColor = Color(red: 0.40, green: 0.75, blue: 0.98)
-    let taskIcons = ["star.fill", "moon.fill", "sparkles", "planet.fill", "bolt.fill"]
+    let taskIcons = ["star.fill", "moon.fill", "sparkles", "globe.americas.fill", "bolt.fill"]
     let particleColors: [Color] = [
         Color(red: 0.55, green: 0.47, blue: 0.97),
         Color(red: 0.40, green: 0.75, blue: 0.98),
