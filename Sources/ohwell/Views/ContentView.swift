@@ -23,7 +23,15 @@ struct ContentView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
 
-                TaskListView()
+                if appState.tasks.isEmpty {
+                    // Show input panel when no tasks
+                    PlanInputView()
+                    Spacer()
+                } else {
+                    // Show add-plan button + task list when tasks exist
+                    PlanInputView()
+                    TaskListView()
+                }
             }
         }
         .frame(width: 320, height: 480)
