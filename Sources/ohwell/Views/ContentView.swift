@@ -6,7 +6,6 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Gradient background from active theme
             LinearGradient(
                 colors: appState.currentTheme.backgroundGradient,
                 startPoint: .top,
@@ -14,10 +13,15 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
 
-            // Main content
             VStack(spacing: 0) {
+                HeaderView()
+
+                Divider()
+                    .background(appState.currentTheme.accentColor.opacity(0.2))
+                    .padding(.horizontal, 16)
+
                 TimerView()
-                    .padding(.top, 20)
+                    .padding(.top, 12)
 
                 Divider()
                     .background(appState.currentTheme.accentColor.opacity(0.2))
@@ -33,7 +37,6 @@ struct ContentView: View {
                 }
             }
 
-            // Confetti overlay (non-interactive)
             ConfettiView()
         }
         .frame(width: 320, height: 480)
