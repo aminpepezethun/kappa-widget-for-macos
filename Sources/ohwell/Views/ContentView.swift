@@ -15,11 +15,15 @@ struct ContentView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Timer section
                 TimerView()
                     .padding(.top, 20)
 
-                Spacer()
+                Divider()
+                    .background(appState.currentTheme.accentColor.opacity(0.2))
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+
+                TaskListView()
             }
         }
         .frame(width: 320, height: 480)
