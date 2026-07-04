@@ -14,15 +14,12 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
 
-            // Placeholder — future phases fill this in
-            VStack(spacing: 16) {
-                Text("OhWell")
-                    .font(.system(.title2, design: appState.currentTheme.fontDesign, weight: .semibold))
-                    .foregroundStyle(appState.currentTheme.accentColor)
+            VStack(spacing: 0) {
+                // Timer section
+                TimerView()
+                    .padding(.top, 20)
 
-                Text("Theme: \(appState.currentTheme.name)")
-                    .font(.system(.caption, design: appState.currentTheme.fontDesign))
-                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.7))
+                Spacer()
             }
         }
         .frame(width: 320, height: 480)
