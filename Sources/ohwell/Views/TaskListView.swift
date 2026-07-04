@@ -15,11 +15,13 @@ struct TaskListView: View {
                                 appState.tasks[$0].id == task.id
                             } ?? false
                         )
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
             }
+            .animation(.spring(duration: 0.3), value: appState.tasks.count)
 
             // Progress footer
             if !appState.tasks.isEmpty {
