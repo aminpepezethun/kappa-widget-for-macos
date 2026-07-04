@@ -19,14 +19,14 @@ struct TimerView: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             // Progress ring
             ZStack {
                 // Track ring
                 Circle()
                     .stroke(
                         appState.currentTheme.accentColor.opacity(0.2),
-                        lineWidth: 8
+                        lineWidth: 10
                     )
 
                 // Progress arc
@@ -34,7 +34,7 @@ struct TimerView: View {
                     .trim(from: 0, to: timerState.progress)
                     .stroke(
                         appState.currentTheme.accentColor,
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
                     .animation(.linear(duration: 1), value: timerState.progress)
@@ -42,26 +42,43 @@ struct TimerView: View {
                 // Center content
                 VStack(spacing: 4) {
                     Text(timeString)
-                        .font(.system(.title, design: appState.currentTheme.fontDesign,
-                                      weight: .semibold))
+                        .font(.system(size: 36, weight: .bold,
+                                      design: appState.currentTheme.fontDesign))
                         .foregroundStyle(appState.currentTheme.accentColor)
                         .monospacedDigit()
 
                     Text(phaseLabel)
-                        .font(.system(.caption, design: appState.currentTheme.fontDesign))
-                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.7))
+                        .font(.system(.footnote, design: appState.currentTheme.fontDesign))
+                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.85))
                 }
             }
-            .frame(width: 140, height: 140)
+            .frame(width: 160, height: 160)
 
-            // Controls
-            HStack(spacing: 24) {
-                Button(action: { timerState.reset() }) {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 18))
-                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.8))
+            // Controls — play/pause centered, reset left, skip right
+            ZStack {
+                HStack {
+                    Button(action: { timerState.reset() }) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 18))
+                            .foregroundStyle(appState.currentTheme.accentColor.opacity(0.8))
+                    }
+                    .buttonStyle(.plain)
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("Reset timer")
+
+                    Spacer()
+
+                    Button(action: { timerState.skipPhase() }) {
+                        Image(systemName: "forward.end.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(appState.currentTheme.accentColor.opacity(0.8))
+                    }
+                    .buttonStyle(.plain)
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("Skip phase")
                 }
-                .buttonStyle(.plain)
 
                 Button(action: {
                     if timerState.isRunning {
@@ -75,11 +92,9 @@ struct TimerView: View {
                         .foregroundStyle(appState.currentTheme.accentColor)
                 }
                 .buttonStyle(.plain)
-
-                // Spacer to balance reset button (visual symmetry)
-                Color.clear
-                    .frame(width: 18, height: 18)
+                .accessibilityLabel(timerState.isRunning ? "Pause timer" : "Start timer")
             }
+            .padding(.horizontal, 40)
         }
         .padding(.vertical, 8)
     }

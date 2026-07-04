@@ -13,7 +13,7 @@ struct HeaderView: View {
             Spacer()
 
             // Theme picker
-            HStack(spacing: 6) {
+            HStack(spacing: 10) {
                 ForEach(Array(appState.availableThemes.enumerated()), id: \.offset) { index, theme in
                     Button(action: {
                         appState.currentTheme = appState.availableThemes[index]
@@ -31,6 +31,8 @@ struct HeaderView: View {
                             .animation(.spring(duration: 0.2), value: appState.currentTheme.name)
                     }
                     .buttonStyle(.plain)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
                     .help(theme.name)
                 }
             }

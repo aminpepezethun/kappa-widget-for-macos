@@ -8,6 +8,14 @@ struct TaskRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
+            // Active-task accent bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(isActive && !task.isCompleted
+                    ? appState.currentTheme.accentColor
+                    : Color.clear)
+                .frame(width: 3)
+                .animation(.easeInOut(duration: 0.2), value: isActive)
+
             // Animated icon
             Image(systemName: task.iconSymbol)
                 .font(.system(size: 16))
@@ -38,9 +46,11 @@ struct TaskRowView: View {
                     .clipShape(Capsule())
             }
 
-            // Checkbox
+            // Checkbox (tap to toggle)
             Button(action: {
-                if !task.isCompleted {
+                if task.isCompleted {
+                    appState.uncomplete(task: task.id)
+                } else {
                     appState.complete(task: task.id)
                 }
             }) {

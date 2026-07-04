@@ -7,7 +7,7 @@ struct TaskListView: View {
         VStack(spacing: 0) {
             // Scrollable task list
             ScrollView {
-                LazyVStack(spacing: 4) {
+                LazyVStack(spacing: 8) {
                     ForEach(appState.tasks) { task in
                         TaskRowView(
                             task: task,
