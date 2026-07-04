@@ -14,6 +14,7 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
 
+            // Main content
             VStack(spacing: 0) {
                 TimerView()
                     .padding(.top, 20)
@@ -24,15 +25,16 @@ struct ContentView: View {
                     .padding(.top, 8)
 
                 if appState.tasks.isEmpty {
-                    // Show input panel when no tasks
                     PlanInputView()
                     Spacer()
                 } else {
-                    // Show add-plan button + task list when tasks exist
                     PlanInputView()
                     TaskListView()
                 }
             }
+
+            // Confetti overlay (non-interactive)
+            ConfettiView()
         }
         .frame(width: 320, height: 480)
     }
