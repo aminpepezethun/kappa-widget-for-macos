@@ -4,6 +4,7 @@ struct TaskRowView: View {
     @Environment(AppState.self) private var appState
     let task: TaskItem
     let isActive: Bool
+    @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -57,7 +58,9 @@ struct TaskRowView: View {
             RoundedRectangle(cornerRadius: 10)
                 .fill(isActive
                     ? appState.currentTheme.accentColor.opacity(0.12)
-                    : Color.clear)
+                    : isHovered
+                        ? appState.currentTheme.accentColor.opacity(0.06)
+                        : Color.clear)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(isActive
@@ -65,6 +68,11 @@ struct TaskRowView: View {
                             : Color.clear, lineWidth: 1)
                 )
         )
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
         .animation(.easeInOut(duration: 0.2), value: isActive)
         .animation(.easeInOut(duration: 0.2), value: task.isCompleted)
     }
