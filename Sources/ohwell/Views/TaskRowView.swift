@@ -14,6 +14,7 @@ struct TaskRowView: View {
                     ? appState.currentTheme.completionColor
                     : appState.currentTheme.accentColor)
                 .frame(width: 24, height: 24)
+                .iconBouncer(style: appState.currentTheme.iconAnimationStyle, isActive: isActive && !task.isCompleted)
 
             // Task title
             Text(task.title)
