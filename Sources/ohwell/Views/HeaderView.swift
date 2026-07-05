@@ -128,45 +128,42 @@ private struct SessionDiskView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
             } else {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(historyState.sessions) { session in
-                            Button(action: {
-                                historyState.restore(session: session, into: appState)
-                                dismiss()
-                            }) {
-                                HStack(spacing: 10) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(session.planTitle)
-                                            .font(.system(.callout, design: appState.currentTheme.fontDesign))
-                                            .foregroundStyle(appState.currentTheme.accentColor)
-                                            .lineLimit(1)
-                                        Text(session.savedAt, format: .dateTime.month().day().hour().minute())
-                                            .font(.system(.caption2, design: appState.currentTheme.fontDesign))
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    // Completion ratio badge
-                                    Text("\(session.completedCount)/\(session.totalTasks)")
+                // ponytail: plain VStack — no NSScrollView in popover (crashes FirstResponderObserver)
+                VStack(spacing: 0) {
+                    ForEach(historyState.sessions.prefix(5)) { session in
+                        Button(action: {
+                            historyState.restore(session: session, into: appState)
+                            dismiss()
+                        }) {
+                            HStack(spacing: 10) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(session.planTitle)
+                                        .font(.system(.callout, design: appState.currentTheme.fontDesign))
+                                        .foregroundStyle(appState.currentTheme.accentColor)
+                                        .lineLimit(1)
+                                    Text(session.savedAt, format: .dateTime.month().day().hour().minute())
                                         .font(.system(.caption2, design: appState.currentTheme.fontDesign))
-                                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.6))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(appState.currentTheme.accentColor.opacity(0.1))
-                                        .clipShape(Capsule())
+                                        .foregroundStyle(.secondary)
                                 }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 9)
-                                .contentShape(Rectangle())
+                                Spacer()
+                                Text("\(session.completedCount)/\(session.totalTasks)")
+                                    .font(.system(.caption2, design: appState.currentTheme.fontDesign))
+                                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.6))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(appState.currentTheme.accentColor.opacity(0.1))
+                                    .clipShape(Capsule())
                             }
-                            .buttonStyle(.plain)
-
-                            Divider()
-                                .padding(.leading, 14)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+
+                        Divider()
+                            .padding(.leading, 14)
                     }
                 }
-                .frame(maxHeight: 220)
             }
         }
         .frame(width: 270)
