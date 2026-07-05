@@ -97,28 +97,29 @@ struct TaskRowView: View {
                 }
             }
 
-            // Edit button — visible on hover OR while the popover is open
-            // (Fix: editingTask keeps it pinned while the user is editing)
-            if !task.isCompleted && (isHovered || editingTask) {
-                Button(action: { editingTask = true }) {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 12))
-                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
-                }
-                .buttonStyle(.plain)
-                .frame(width: 20, height: 20)
-                .popover(isPresented: $editingTask, arrowEdge: .trailing) {
-                    TaskEditorView(
-                        task: task,
-                        accentColor: appState.currentTheme.accentColor,
-                        fontDesign: appState.currentTheme.fontDesign,
-                        onSave: { newTitle, newDesc in
-                            appState.updateTask(id: task.id,
-                                                title: newTitle,
-                                                description: newDesc)
-                        }
-                    )
-                }
+            // Edit button — always in hierarchy for stable SwiftUI identity;
+            // opacity hides it when not needed
+            let showEdit = !task.isCompleted && (isHovered || editingTask)
+            Button(action: { editingTask = true }) {
+                Image(systemName: "pencil")
+                    .font(.system(size: 12))
+                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
+            }
+            .buttonStyle(.plain)
+            .frame(width: 20, height: 20)
+            .opacity(showEdit ? 1 : 0)
+            .allowsHitTesting(showEdit)
+            .popover(isPresented: $editingTask, arrowEdge: .trailing) {
+                TaskEditorView(
+                    task: task,
+                    accentColor: appState.currentTheme.accentColor,
+                    fontDesign: appState.currentTheme.fontDesign,
+                    onSave: { newTitle, newDesc in
+                        appState.updateTask(id: task.id,
+                                            title: newTitle,
+                                            description: newDesc)
+                    }
+                )
             }
 
             // Checkbox — one-click OR hold to fill the ring

@@ -118,42 +118,39 @@ struct PlanInputView: View {
                     .background(appState.currentTheme.accentColor.opacity(0.15))
                     .padding(.horizontal, 12)
 
-                ScrollView {
-                    VStack(spacing: 3) {
-                        ForEach(draftTasks) { task in
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(appState.currentTheme.accentColor.opacity(0.4))
-                                    .frame(width: 5, height: 5)
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(task.title)
-                                        .font(.system(.caption, design: appState.currentTheme.fontDesign))
-                                        .foregroundStyle(appState.currentTheme.accentColor)
-                                    if !task.description.isEmpty {
-                                        Text(task.description)
-                                            .font(.system(.caption2, design: appState.currentTheme.fontDesign))
-                                            .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
-                                    }
-                                }
-                                Spacer()
-                                if let m = task.estimatedMinutes {
-                                    Text("\(m)m")
+                VStack(spacing: 3) {
+                    ForEach(draftTasks) { task in
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(appState.currentTheme.accentColor.opacity(0.4))
+                                .frame(width: 5, height: 5)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(task.title)
+                                    .font(.system(.caption, design: appState.currentTheme.fontDesign))
+                                    .foregroundStyle(appState.currentTheme.accentColor)
+                                if !task.description.isEmpty {
+                                    Text(task.description)
                                         .font(.system(.caption2, design: appState.currentTheme.fontDesign))
-                                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.45))
+                                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
                                 }
-                                Button(action: { draftTasks.removeAll { $0.id == task.id } }) {
-                                    Image(systemName: "xmark")
-                                        .font(.system(size: 9))
-                                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.35))
-                                }
-                                .buttonStyle(.plain)
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 3)
+                            Spacer()
+                            if let m = task.estimatedMinutes {
+                                Text("\(m)m")
+                                    .font(.system(.caption2, design: appState.currentTheme.fontDesign))
+                                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.45))
+                            }
+                            Button(action: { draftTasks.removeAll { $0.id == task.id } }) {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.35))
+                            }
+                            .buttonStyle(.plain)
                         }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 3)
                     }
                 }
-                .frame(maxHeight: 72)
 
                 // Commit buttons
                 HStack(spacing: 8) {
