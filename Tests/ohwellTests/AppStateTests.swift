@@ -167,6 +167,18 @@ struct AppStateTests {
         #expect(state.tasks.count == 1)
     }
 
+    // MARK: - setTasks with empty list (session disk "New Plan")
+
+    @Test func setTasksWithEmptyListClearsDashboard() {
+        let state = AppState()
+        state.setTasks([TaskItem(title: "A"), TaskItem(title: "B")])
+        state.setTasks([], planText: "")
+        #expect(state.tasks.isEmpty)
+        #expect(state.activeTaskIndex == nil)
+    }
+
+    // MARK: - archiveCompleted
+
     @Test func archiveCompletedClearsCompletionTriggers() {
         let state = AppState()
         let a = TaskItem(title: "A")

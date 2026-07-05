@@ -4,10 +4,16 @@ struct TaskRowView: View {
     @Environment(AppState.self) private var appState
     let task: TaskItem
     let isActive: Bool
+
     @State private var isHovered = false
     @State private var editingTime = false
     @State private var editingTask = false
     @State private var draftMinutes: Int = 25
+
+    // Hold-to-complete
+    @GestureState private var isLongPressing = false
+    @State private var holdProgress: CGFloat = 0
+    @State private var longPressHandled = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -26,7 +32,8 @@ struct TaskRowView: View {
                     ? appState.currentTheme.completionColor
                     : appState.currentTheme.accentColor)
                 .frame(width: 24, height: 24)
-                .iconBouncer(style: appState.currentTheme.iconAnimationStyle, isActive: isActive && !task.isCompleted)
+                .iconBouncer(style: appState.currentTheme.iconAnimationStyle,
+                             isActive: isActive && !task.isCompleted)
 
             // Title + optional description
             VStack(alignment: .leading, spacing: 2) {
@@ -35,7 +42,8 @@ struct TaskRowView: View {
                     .foregroundStyle(task.isCompleted
                         ? appState.currentTheme.accentColor.opacity(0.5)
                         : appState.currentTheme.accentColor)
-                    .strikethrough(task.isCompleted, color: appState.currentTheme.accentColor.opacity(0.5))
+                    .strikethrough(task.isCompleted,
+                                   color: appState.currentTheme.accentColor.opacity(0.5))
                     .lineLimit(2)
 
                 if !task.description.isEmpty {
@@ -84,46 +92,38 @@ struct TaskRowView: View {
             }
             .onChange(of: editingTime) { _, isOpen in
                 if !isOpen {
-                    appState.updateTime(taskId: task.id, minutes: draftMinutes == 0 ? nil : draftMinutes)
+                    appState.updateTime(taskId: task.id,
+                                        minutes: draftMinutes == 0 ? nil : draftMinutes)
                 }
             }
 
-            // Edit button (pencil) — only on incomplete tasks
-            if !task.isCompleted && isHovered {
-                Button(action: { editingTask = true }) {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 12))
-                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
-                }
-                .buttonStyle(.plain)
-                .frame(width: 20, height: 20)
-                .popover(isPresented: $editingTask, arrowEdge: .trailing) {
-                    TaskEditorView(
-                        task: task,
-                        accentColor: appState.currentTheme.accentColor,
-                        fontDesign: appState.currentTheme.fontDesign,
-                        onSave: { newTitle, newDesc in
-                            appState.updateTask(id: task.id, title: newTitle, description: newDesc)
-                        }
-                    )
-                }
-            }
-
-            // Checkbox (tap to toggle)
-            Button(action: {
-                if task.isCompleted {
-                    appState.uncomplete(task: task.id)
-                } else {
-                    appState.complete(task: task.id)
-                }
-            }) {
-                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
-                    .foregroundStyle(task.isCompleted
-                        ? appState.currentTheme.completionColor
-                        : appState.currentTheme.accentColor.opacity(0.5))
+            // Edit button — always in hierarchy for stable SwiftUI identity;
+            // opacity hides it when not needed
+            let showEdit = !task.isCompleted && (isHovered || editingTask)
+            Button(action: { editingTask = true }) {
+                Image(systemName: "pencil")
+                    .font(.system(size: 12))
+                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
             }
             .buttonStyle(.plain)
+            .frame(width: 20, height: 20)
+            .opacity(showEdit ? 1 : 0)
+            .allowsHitTesting(showEdit)
+            .popover(isPresented: $editingTask, arrowEdge: .trailing) {
+                TaskEditorView(
+                    task: task,
+                    accentColor: appState.currentTheme.accentColor,
+                    fontDesign: appState.currentTheme.fontDesign,
+                    onSave: { newTitle, newDesc in
+                        appState.updateTask(id: task.id,
+                                            title: newTitle,
+                                            description: newDesc)
+                    }
+                )
+            }
+
+            // Checkbox — one-click OR hold to fill the ring
+            checkboxView
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -142,13 +142,67 @@ struct TaskRowView: View {
                 )
         )
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
+            withAnimation(.easeInOut(duration: 0.15)) { isHovered = hovering }
         }
         .animation(.easeInOut(duration: 0.2), value: isActive)
         .animation(.easeInOut(duration: 0.2), value: task.isCompleted)
+        // Animate the ring fill while long-pressing
+        .onChange(of: isLongPressing) { _, pressing in
+            if pressing && !task.isCompleted {
+                withAnimation(.linear(duration: 1.5)) { holdProgress = 1.0 }
+            } else {
+                withAnimation(.easeOut(duration: 0.25)) { holdProgress = 0 }
+            }
+        }
     }
+
+    // MARK: - Checkbox + hold ring
+
+    private var checkboxView: some View {
+        let longPress = LongPressGesture(minimumDuration: 1.5)
+            .updating($isLongPressing) { value, state, _ in state = value }
+            .onEnded { _ in
+                longPressHandled = true
+                if !task.isCompleted { appState.complete(task: task.id) }
+                holdProgress = 0
+            }
+
+        return ZStack {
+            // Ring track (only visible while pressing)
+            if holdProgress > 0 && !task.isCompleted {
+                Circle()
+                    .stroke(appState.currentTheme.accentColor.opacity(0.2), lineWidth: 2.5)
+                    .frame(width: 24, height: 24)
+                Circle()
+                    .trim(from: 0, to: holdProgress)
+                    .stroke(appState.currentTheme.accentColor,
+                            style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 24, height: 24)
+            }
+
+            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: 20))
+                .foregroundStyle(task.isCompleted
+                    ? appState.currentTheme.completionColor
+                    : appState.currentTheme.accentColor.opacity(0.5))
+        }
+        .frame(width: 24, height: 24)
+        .contentShape(Circle())
+        // One-click: tap to complete/uncomplete immediately
+        .onTapGesture {
+            guard !longPressHandled else { longPressHandled = false; return }
+            if task.isCompleted {
+                appState.uncomplete(task: task.id)
+            } else {
+                appState.complete(task: task.id)
+            }
+        }
+        // Hold 1.5s: ring fills up, then auto-completes
+        .simultaneousGesture(longPress)
+    }
+
+    // MARK: - Helpers
 
     private func formatMinutes(_ minutes: Int) -> String {
         if minutes < 60 {
@@ -248,12 +302,10 @@ private struct TimeEditorView: View {
             }
             .labelsHidden()
 
-            Button("Clear") {
-                draftMinutes = 0
-            }
-            .font(.system(.caption, design: fontDesign))
-            .foregroundStyle(accentColor.opacity(0.6))
-            .buttonStyle(.plain)
+            Button("Clear") { draftMinutes = 0 }
+                .font(.system(.caption, design: fontDesign))
+                .foregroundStyle(accentColor.opacity(0.6))
+                .buttonStyle(.plain)
         }
         .padding(14)
         .frame(width: 140)

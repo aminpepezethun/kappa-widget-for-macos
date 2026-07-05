@@ -2,8 +2,15 @@ import SwiftUI
 
 struct PlanInputView: View {
     @Environment(AppState.self) private var appState
-    @State private var planText: String = ""
+    @State private var taskName: String = ""
+    @State private var taskDescription: String = ""
+    @State private var taskMinutes: Int = 25
+    @State private var draftTasks: [TaskItem] = []
     @State private var showingInput: Bool = false
+
+    private var canAdd: Bool {
+        !taskName.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,10 +35,7 @@ struct PlanInputView: View {
             .foregroundStyle(appState.currentTheme.accentColor)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(appState.currentTheme.accentColor.opacity(0.12))
-            )
+            .background(Capsule().fill(appState.currentTheme.accentColor.opacity(0.12)))
         }
         .buttonStyle(.plain)
         .padding(.vertical, 8)
@@ -43,11 +47,11 @@ struct PlanInputView: View {
         VStack(spacing: 8) {
             // Header
             HStack {
-                Text("Paste your plan")
+                Text("Add Tasks")
                     .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
                     .foregroundStyle(appState.currentTheme.accentColor)
                 Spacer()
-                Button(action: { showingInput = false; planText = "" }) {
+                Button(action: dismissPanel) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
                 }
@@ -56,88 +60,163 @@ struct PlanInputView: View {
             .padding(.horizontal, 12)
             .padding(.top, 8)
 
-            // TextEditor
-            TextEditor(text: $planText)
-                .font(.system(.body, design: appState.currentTheme.fontDesign))
-                .foregroundStyle(appState.currentTheme.accentColor)
-                .scrollContentBackground(.hidden)
-                .background(appState.currentTheme.accentColor.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .frame(height: 100)
+            // Task name + time stepper on the same row
+            HStack(spacing: 6) {
+                TextField("Task name", text: $taskName)
+                    .font(.system(.body, design: appState.currentTheme.fontDesign))
+                    .textFieldStyle(.roundedBorder)
+
+                Stepper(value: $taskMinutes, in: 1...480, step: 5) {
+                    Text("\(taskMinutes)m")
+                        .font(.system(.caption, design: appState.currentTheme.fontDesign))
+                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.7))
+                        .frame(width: 34, alignment: .trailing)
+                        .monospacedDigit()
+                }
+            }
+            .padding(.horizontal, 12)
+
+            // \ separator — visual divider between name and description
+            HStack(spacing: 6) {
+                Rectangle()
+                    .fill(appState.currentTheme.accentColor.opacity(0.12))
+                    .frame(height: 1)
+                Text("\\")
+                    .font(.system(.caption2, design: appState.currentTheme.fontDesign, weight: .medium))
+                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.35))
+                Rectangle()
+                    .fill(appState.currentTheme.accentColor.opacity(0.12))
+                    .frame(height: 1)
+            }
+            .padding(.horizontal, 12)
+
+            // Description field
+            TextField("Description (optional)", text: $taskDescription)
+                .font(.system(.callout, design: appState.currentTheme.fontDesign))
+                .textFieldStyle(.roundedBorder)
                 .padding(.horizontal, 12)
 
-            // Action buttons — two choices when tasks already exist, one otherwise
-            let isEmpty = planText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            if appState.tasks.isEmpty {
-                // No existing tasks: single "Split into Tasks" button
-                Button(action: { splitIntoTasks(replacing: true) }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "list.bullet")
-                        Text("Split into Tasks")
-                            .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Capsule().fill(isEmpty
-                        ? appState.currentTheme.accentColor.opacity(0.3)
-                        : appState.currentTheme.accentColor))
+            // Add Task button
+            Button(action: addDraftTask) {
+                HStack(spacing: 4) {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 13))
+                    Text("Add Task")
+                        .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
                 }
-                .buttonStyle(.plain)
-                .disabled(isEmpty)
-                .padding(.bottom, 8)
-            } else {
-                // Tasks already exist: offer "Add to list" or "Replace"
-                HStack(spacing: 8) {
-                    Button(action: { splitIntoTasks(replacing: false) }) {
-                        Text("Add to list")
-                            .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
-                            .foregroundStyle(appState.currentTheme.accentColor)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Capsule().fill(appState.currentTheme.accentColor.opacity(isEmpty ? 0.08 : 0.15)))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isEmpty)
+                .foregroundStyle(canAdd
+                    ? appState.currentTheme.accentColor
+                    : appState.currentTheme.accentColor.opacity(0.3))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canAdd)
+            .padding(.bottom, draftTasks.isEmpty ? 8 : 4)
 
-                    Button(action: { splitIntoTasks(replacing: true) }) {
-                        Text("Replace")
-                            .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
+            // Draft list — shows tasks queued before committing
+            if !draftTasks.isEmpty {
+                Divider()
+                    .background(appState.currentTheme.accentColor.opacity(0.15))
+                    .padding(.horizontal, 12)
+
+                VStack(spacing: 3) {
+                    ForEach(draftTasks) { task in
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(appState.currentTheme.accentColor.opacity(0.4))
+                                .frame(width: 5, height: 5)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(task.title)
+                                    .font(.system(.caption, design: appState.currentTheme.fontDesign))
+                                    .foregroundStyle(appState.currentTheme.accentColor)
+                                if !task.description.isEmpty {
+                                    Text(task.description)
+                                        .font(.system(.caption2, design: appState.currentTheme.fontDesign))
+                                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
+                                }
+                            }
+                            Spacer()
+                            if let m = task.estimatedMinutes {
+                                Text("\(m)m")
+                                    .font(.system(.caption2, design: appState.currentTheme.fontDesign))
+                                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.45))
+                            }
+                            Button(action: { draftTasks.removeAll { $0.id == task.id } }) {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.35))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 3)
+                    }
+                }
+
+                // Commit buttons
+                HStack(spacing: 8) {
+                    if !appState.tasks.isEmpty {
+                        Button(action: { commitDrafts(replacing: false) }) {
+                            Text("Add to list")
+                                .font(.system(.caption, design: appState.currentTheme.fontDesign, weight: .medium))
+                                .foregroundStyle(appState.currentTheme.accentColor)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Capsule().fill(appState.currentTheme.accentColor.opacity(0.12)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Button(action: { commitDrafts(replacing: true) }) {
+                        Text(appState.tasks.isEmpty ? "Save Tasks" : "Replace")
+                            .font(.system(.caption, design: appState.currentTheme.fontDesign, weight: .medium))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Capsule().fill(isEmpty
-                                ? appState.currentTheme.accentColor.opacity(0.3)
-                                : appState.currentTheme.accentColor))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(appState.currentTheme.accentColor))
                     }
                     .buttonStyle(.plain)
-                    .disabled(isEmpty)
                 }
                 .padding(.bottom, 8)
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(appState.currentTheme.accentColor.opacity(0.05))
-        )
+        .background(RoundedRectangle(cornerRadius: 12).fill(appState.currentTheme.accentColor.opacity(0.05)))
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
     }
 
-    // MARK: - Action
+    // MARK: - Actions
 
-    private func splitIntoTasks(replacing: Bool) {
+    private func addDraftTask() {
+        let name = taskName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
         let icons = appState.currentTheme.taskIcons
-        let newTasks = PlanParser.parse(text: planText, icons: icons)
-        guard !newTasks.isEmpty else { return }
+        let icon = icons.isEmpty ? "circle" : icons[draftTasks.count % icons.count]
+        draftTasks.append(TaskItem(
+            title: name,
+            description: taskDescription.trimmingCharacters(in: .whitespaces),
+            estimatedMinutes: taskMinutes,
+            iconSymbol: icon
+        ))
+        taskName = ""
+        taskDescription = ""
+        taskMinutes = 25
+    }
+
+    private func commitDrafts(replacing: Bool) {
+        guard !draftTasks.isEmpty else { return }
         if replacing {
-            // Discard existing tasks and start fresh
-            appState.setTasks(newTasks, planText: planText)
+            appState.setTasks(draftTasks, planText: draftTasks.first?.title ?? "")
         } else {
-            // Merge: keep completed items, append the new ones after them
-            appState.appendTasks(newTasks)
+            appState.appendTasks(draftTasks)
         }
+        dismissPanel()
+    }
+
+    private func dismissPanel() {
         showingInput = false
-        planText = ""
+        taskName = ""
+        taskDescription = ""
+        taskMinutes = 25
+        draftTasks = []
     }
 }
