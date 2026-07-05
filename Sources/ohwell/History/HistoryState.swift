@@ -20,8 +20,17 @@ final class HistoryState {
     }
 
     func restore(session: SessionRecord, into appState: AppState) {
+        // Save progress on current session before swapping
+        appState.saveCurrentSessionSnapshot()
+
+        // Load the selected session's tasks without creating a new session record
         let tasks = session.decodeTasks()
-        appState.setTasks(tasks, planText: session.planTitle)
+        appState.tasks = tasks
+        appState.planText = session.planTitle
+        appState.activeTaskIndex = tasks.firstIndex { !$0.isCompleted }
+        appState.currentSessionId = session.id
+
+        refresh()
     }
 
     func delete(session: SessionRecord) {

@@ -12,6 +12,7 @@ final class AppState {
     // Injected by AppDelegate after init — nil in tests, persistence is skipped
     var modelContext: ModelContext?
     private var sessionSaved = false
+    var currentSessionId: UUID? = nil
 
     var availableThemes: [any Theme] {
         // Add more themes here
@@ -24,11 +25,16 @@ final class AppState {
 
     // MARK: - Public API
 
-    func setTasks(_ newTasks: [TaskItem], planText: String = "") {
+    func setTasks(_ newTasks: [TaskItem], planText: String = "", sessionName: String = "") {
         tasks = newTasks
         self.planText = planText
         activeTaskIndex = newTasks.firstIndex { !$0.isCompleted }
         sessionSaved = false
+        if !newTasks.isEmpty {
+            currentSessionId = createSession(name: sessionName, planTitle: planText)
+        } else {
+            currentSessionId = nil
+        }
         savePlan()
     }
 
@@ -123,14 +129,48 @@ final class AppState {
         try? ctx.save()
     }
 
+    /// Persist current task snapshot into the active SessionRecord.
+    /// Called by HistoryState.restore() before swapping sessions.
+    func saveCurrentSessionSnapshot() {
+        guard let ctx = modelContext,
+              let sid = currentSessionId,
+              !tasks.isEmpty else { return }
+        let descriptor = FetchDescriptor<SessionRecord>()
+        if let record = try? ctx.fetch(descriptor).first(where: { $0.id == sid }) {
+            record.updateSnapshot(tasks: tasks)
+            try? ctx.save()
+        }
+    }
+
+    /// Creates a new SessionRecord immediately, returns its id.
+    @discardableResult
+    private func createSession(name: String, planTitle: String) -> UUID? {
+        guard let ctx = modelContext else { return nil }
+        let descriptor = FetchDescriptor<SessionRecord>()
+        let count = (try? ctx.fetch(descriptor).count) ?? 0
+        let colorHex = SessionRecord.palette[count % SessionRecord.palette.count]
+        let title = planTitle.split(separator: "\n").first.map(String.init) ?? ""
+        let record = SessionRecord(sessionName: name, planTitle: title,
+                                   tasks: tasks.isEmpty ? [] : tasks,
+                                   colorHex: colorHex)
+        ctx.insert(record)
+        try? ctx.save()
+        return record.id
+    }
+
     private func saveSession() {
         guard let ctx = modelContext, !tasks.isEmpty else { return }
-        let title = planText
-            .split(separator: "\n", omittingEmptySubsequences: true)
-            .first
-            .map(String.init) ?? "Untitled Plan"
-        ctx.insert(SessionRecord(planTitle: title, tasks: tasks))
-        try? ctx.save()
+        if let sid = currentSessionId {
+            // Update existing record
+            let descriptor = FetchDescriptor<SessionRecord>()
+            if let record = try? ctx.fetch(descriptor).first(where: { $0.id == sid }) {
+                record.updateSnapshot(tasks: tasks)
+                try? ctx.save()
+                return
+            }
+        }
+        // Fallback: create if somehow missing
+        createSession(name: "", planTitle: planText)
     }
 
 }
