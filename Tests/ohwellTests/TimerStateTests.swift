@@ -176,4 +176,61 @@ struct TimerStateTests {
         state.tick()
         #expect(state.completedSessions == afterWork)
     }
+
+    // MARK: - Zen mode (Phase E)
+
+    @Test func zenStartSetsZenModeAndRunning() {
+        let state = TimerState()
+        state.zenStart()
+        #expect(state.isZenMode)
+        #expect(state.isRunning)
+        state.zenDone()
+    }
+
+    @Test func zenStartResetsElapsedSeconds() {
+        let state = TimerState()
+        state.zenStart()
+        state.tick()
+        state.tick()
+        state.zenDone()
+        state.zenStart()
+        #expect(state.zenElapsedSeconds == 0)
+        state.zenDone()
+    }
+
+    @Test func zenTickIncrementsElapsedNotCountdown() {
+        let state = TimerState()
+        let beforeRemaining = state.secondsRemaining
+        state.zenStart()
+        state.tick()
+        state.tick()
+        #expect(state.zenElapsedSeconds == 2)
+        #expect(state.secondsRemaining == beforeRemaining) // countdown untouched
+        state.zenDone()
+    }
+
+    @Test func zenDoneClearsZenModeAndRunning() {
+        let state = TimerState()
+        state.zenStart()
+        state.zenDone()
+        #expect(!state.isZenMode)
+        #expect(!state.isRunning)
+    }
+
+    @Test func pauseExitsZenMode() {
+        let state = TimerState()
+        state.zenStart()
+        state.pause()
+        #expect(!state.isZenMode)
+        #expect(!state.isRunning)
+    }
+
+    @Test func resetExitsZenModeAndClearsElapsed() {
+        let state = TimerState()
+        state.zenStart()
+        state.tick()
+        state.reset()
+        #expect(!state.isZenMode)
+        #expect(state.zenElapsedSeconds == 0)
+    }
 }
