@@ -7,9 +7,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover?
     private let appState = AppState()
     private let timerState = TimerState()
+    private let historyState = HistoryState()
+    private let audioManager = AudioManager()
+    private let persistence = PersistenceController.shared
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+
+        // Wire persistence
+        let ctx = persistence.container.mainContext
+        appState.modelContext = ctx
+        appState.loadSavedPlan()
+        historyState.load(from: ctx)
+
         setupStatusItem()
         setupPopover()
     }
@@ -31,6 +41,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: ContentView()
                 .environment(appState)
                 .environment(timerState)
+                .environment(historyState)
+                .environment(audioManager)
         )
         self.popover = popover
     }

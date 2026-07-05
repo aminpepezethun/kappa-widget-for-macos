@@ -6,7 +6,8 @@ let package = Package(
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "ohwell"
+            name: "ohwell",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "ohwellTests",
