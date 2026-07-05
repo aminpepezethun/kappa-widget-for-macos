@@ -14,6 +14,10 @@ final class OhWellUITests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
+        // XCUITest requires a host .app bundle — skip gracefully under `swift test`
+        // Run actual UI tests via: make ui-test
+        let isXcodebuildRun = ProcessInfo.processInfo.environment["__XCODE_BUILT_PRODUCTS_DIR_PATHS"] != nil
+        try XCTSkipUnless(isXcodebuildRun, "UI tests require xcodebuild. Use: make ui-test")
         app = XCUIApplication()
         app.launch()
         // Give the status-bar app a moment to appear
