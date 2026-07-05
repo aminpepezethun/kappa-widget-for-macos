@@ -66,6 +66,10 @@ final class TimerState {
         }
     }
 
+    func skipPhase() {
+        advancePhase()
+    }
+
     private func advancePhase() {
         pause()
         switch currentPhase {

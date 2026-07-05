@@ -21,10 +21,17 @@ final class AppState {
     }
 
     func complete(task id: UUID) {
-        guard let idx = tasks.firstIndex(where: { $0.id == id }) else { return }
+        guard let idx = tasks.firstIndex(where: { $0.id == id }),
+              !tasks[idx].isCompleted else { return }
         tasks[idx].isCompleted = true
         completionTriggers.append(id)
-        // Auto-advance to next incomplete task
+        activeTaskIndex = tasks.firstIndex { !$0.isCompleted }
+    }
+
+    func uncomplete(task id: UUID) {
+        guard let idx = tasks.firstIndex(where: { $0.id == id }),
+              tasks[idx].isCompleted else { return }
+        tasks[idx].isCompleted = false
         activeTaskIndex = tasks.firstIndex { !$0.isCompleted }
     }
 
