@@ -96,7 +96,7 @@ struct ContentView: View {
         .onChange(of: allDone) { _, newValue in
             if newValue { dismissedAllDone = false }
         }
-        .frame(width: 320, height: 480)
+        .frame(width: 320)
     }
 }
 
