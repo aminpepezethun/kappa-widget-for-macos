@@ -5,6 +5,8 @@ struct TaskRowView: View {
     let task: TaskItem
     let isActive: Bool
     @State private var isHovered = false
+    @State private var editingTime = false
+    @State private var draftMinutes: Int = 25
 
     var body: some View {
         HStack(spacing: 10) {
@@ -35,15 +37,46 @@ struct TaskRowView: View {
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Time badge (optional)
-            if let minutes = task.estimatedMinutes {
-                Text(formatMinutes(minutes))
-                    .font(.system(.caption2, design: appState.currentTheme.fontDesign))
-                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.6))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(appState.currentTheme.accentColor.opacity(0.15))
-                    .clipShape(Capsule())
+            // Time badge — tap to edit estimatedMinutes
+            Group {
+                if let minutes = task.estimatedMinutes {
+                    Button(action: {
+                        draftMinutes = minutes
+                        editingTime = true
+                    }) {
+                        Text(formatMinutes(minutes))
+                            .font(.system(.caption2, design: appState.currentTheme.fontDesign))
+                            .foregroundStyle(appState.currentTheme.accentColor.opacity(0.6))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(appState.currentTheme.accentColor.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Button(action: {
+                        draftMinutes = 25
+                        editingTime = true
+                    }) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 11))
+                            .foregroundStyle(appState.currentTheme.accentColor.opacity(0.3))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .popover(isPresented: $editingTime, arrowEdge: .bottom) {
+                TimeEditorView(
+                    draftMinutes: $draftMinutes,
+                    accentColor: appState.currentTheme.accentColor,
+                    fontDesign: appState.currentTheme.fontDesign
+                )
+            }
+            .onChange(of: editingTime) { _, isOpen in
+                // Commit when popover closes; nil clears the badge
+                if !isOpen {
+                    appState.updateTime(taskId: task.id, minutes: draftMinutes == 0 ? nil : draftMinutes)
+                }
             }
 
             // Checkbox (tap to toggle)
@@ -85,6 +118,47 @@ struct TaskRowView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: isActive)
         .animation(.easeInOut(duration: 0.2), value: task.isCompleted)
+    }
+
+    private func formatMinutes(_ minutes: Int) -> String {
+        if minutes < 60 {
+            return "\(minutes)m"
+        } else {
+            let h = minutes / 60
+            let m = minutes % 60
+            return m == 0 ? "\(h)h" : "\(h)h\(m)m"
+        }
+    }
+}
+
+// MARK: - Time editor popover
+
+private struct TimeEditorView: View {
+    @Binding var draftMinutes: Int
+    let accentColor: Color
+    let fontDesign: Font.Design
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Text(draftMinutes == 0 ? "No estimate" : formatMinutes(draftMinutes))
+                .font(.system(.headline, design: fontDesign, weight: .semibold))
+                .foregroundStyle(accentColor)
+                .monospacedDigit()
+
+            Stepper(value: $draftMinutes, in: 0...480, step: 5) {
+                EmptyView()
+            }
+            .labelsHidden()
+
+            Button("Clear") {
+                draftMinutes = 0
+            }
+            .font(.system(.caption, design: fontDesign))
+            .foregroundStyle(accentColor.opacity(0.6))
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .frame(width: 140)
     }
 
     private func formatMinutes(_ minutes: Int) -> String {

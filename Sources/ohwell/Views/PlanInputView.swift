@@ -66,26 +66,55 @@ struct PlanInputView: View {
                 .frame(height: 100)
                 .padding(.horizontal, 12)
 
-            // Split button
-            Button(action: splitIntoTasks) {
-                HStack(spacing: 6) {
-                    Image(systemName: "list.bullet")
-                    Text("Split into Tasks")
-                        .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
+            // Action buttons — two choices when tasks already exist, one otherwise
+            let isEmpty = planText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if appState.tasks.isEmpty {
+                // No existing tasks: single "Split into Tasks" button
+                Button(action: { splitIntoTasks(replacing: true) }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "list.bullet")
+                        Text("Split into Tasks")
+                            .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(isEmpty
+                        ? appState.currentTheme.accentColor.opacity(0.3)
+                        : appState.currentTheme.accentColor))
                 }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(planText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                              ? appState.currentTheme.accentColor.opacity(0.3)
-                              : appState.currentTheme.accentColor)
-                )
+                .buttonStyle(.plain)
+                .disabled(isEmpty)
+                .padding(.bottom, 8)
+            } else {
+                // Tasks already exist: offer "Add to list" or "Replace"
+                HStack(spacing: 8) {
+                    Button(action: { splitIntoTasks(replacing: false) }) {
+                        Text("Add to list")
+                            .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
+                            .foregroundStyle(appState.currentTheme.accentColor)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(appState.currentTheme.accentColor.opacity(isEmpty ? 0.08 : 0.15)))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isEmpty)
+
+                    Button(action: { splitIntoTasks(replacing: true) }) {
+                        Text("Replace")
+                            .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(isEmpty
+                                ? appState.currentTheme.accentColor.opacity(0.3)
+                                : appState.currentTheme.accentColor))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isEmpty)
+                }
+                .padding(.bottom, 8)
             }
-            .buttonStyle(.plain)
-            .disabled(planText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .padding(.bottom, 8)
         }
         .background(
             RoundedRectangle(cornerRadius: 12)
@@ -97,11 +126,17 @@ struct PlanInputView: View {
 
     // MARK: - Action
 
-    private func splitIntoTasks() {
+    private func splitIntoTasks(replacing: Bool) {
         let icons = appState.currentTheme.taskIcons
-        let tasks = PlanParser.parse(text: planText, icons: icons)
-        guard !tasks.isEmpty else { return }
-        appState.setTasks(tasks, planText: planText)
+        let newTasks = PlanParser.parse(text: planText, icons: icons)
+        guard !newTasks.isEmpty else { return }
+        if replacing {
+            // Discard existing tasks and start fresh
+            appState.setTasks(newTasks, planText: planText)
+        } else {
+            // Merge: keep completed items, append the new ones after them
+            appState.appendTasks(newTasks)
+        }
         showingInput = false
         planText = ""
     }
