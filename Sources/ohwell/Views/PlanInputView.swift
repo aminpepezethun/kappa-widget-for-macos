@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PlanInputView: View {
     @Environment(AppState.self) private var appState
+    @State private var sessionName: String = ""
     @State private var taskName: String = ""
     @State private var taskDescription: String = ""
     @State private var taskMinutes: Int = 25
@@ -47,7 +48,7 @@ struct PlanInputView: View {
         VStack(spacing: 8) {
             // Header
             HStack {
-                Text("Add Tasks")
+                Text("New Session")
                     .font(.system(.callout, design: appState.currentTheme.fontDesign, weight: .medium))
                     .foregroundStyle(appState.currentTheme.accentColor)
                 Spacer()
@@ -59,6 +60,12 @@ struct PlanInputView: View {
             }
             .padding(.horizontal, 12)
             .padding(.top, 8)
+
+            // Session name
+            TextField("Session name (optional)", text: $sessionName)
+                .font(.system(.callout, design: appState.currentTheme.fontDesign))
+                .textFieldStyle(.roundedBorder)
+                .padding(.horizontal, 12)
 
             // Task name + time stepper on the same row
             HStack(spacing: 6) {
@@ -204,8 +211,11 @@ struct PlanInputView: View {
 
     private func commitDrafts(replacing: Bool) {
         guard !draftTasks.isEmpty else { return }
+        let name = sessionName.trimmingCharacters(in: .whitespaces)
         if replacing {
-            appState.setTasks(draftTasks, planText: draftTasks.first?.title ?? "")
+            appState.setTasks(draftTasks,
+                              planText: draftTasks.first?.title ?? "",
+                              sessionName: name)
         } else {
             appState.appendTasks(draftTasks)
         }
@@ -214,6 +224,7 @@ struct PlanInputView: View {
 
     private func dismissPanel() {
         showingInput = false
+        sessionName = ""
         taskName = ""
         taskDescription = ""
         taskMinutes = 25

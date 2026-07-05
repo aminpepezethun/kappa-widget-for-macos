@@ -135,9 +135,12 @@ private struct SessionDiskView: View {
                             historyState.restore(session: session, into: appState)
                             dismiss()
                         }) {
-                            HStack(spacing: 10) {
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(session.color)
+                                    .frame(width: 8, height: 8)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(session.planTitle)
+                                    Text(session.sessionName)
                                         .font(.system(.callout, design: appState.currentTheme.fontDesign))
                                         .foregroundStyle(appState.currentTheme.accentColor)
                                         .lineLimit(1)
@@ -148,10 +151,10 @@ private struct SessionDiskView: View {
                                 Spacer()
                                 Text("\(session.completedCount)/\(session.totalTasks)")
                                     .font(.system(.caption2, design: appState.currentTheme.fontDesign))
-                                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.6))
+                                    .foregroundStyle(session.color.opacity(0.8))
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(appState.currentTheme.accentColor.opacity(0.1))
+                                    .background(session.color.opacity(0.12))
                                     .clipShape(Capsule())
                             }
                             .padding(.horizontal, 14)
