@@ -14,6 +14,7 @@ final class AppState {
     private var sessionSaved = false
 
     var availableThemes: [any Theme] {
+        // Add more themes here
         [ForestTheme(), SpaceTheme(), MinimalTheme()]
     }
 
@@ -42,6 +43,26 @@ final class AppState {
     func updateTime(taskId: UUID, minutes: Int?) {
         guard let idx = tasks.firstIndex(where: { $0.id == taskId }) else { return }
         tasks[idx].estimatedMinutes = minutes
+        savePlan()
+    }
+
+    func updateTask(id: UUID, title: String, description: String) {
+        guard let idx = tasks.firstIndex(where: { $0.id == id }) else { return }
+        tasks[idx].title = title
+        tasks[idx].description = description
+        savePlan()
+    }
+
+    func archiveCompleted() {
+        let completed = tasks.filter(\.isCompleted)
+        guard !completed.isEmpty else { return }
+        if tasks.allSatisfy(\.isCompleted), !sessionSaved {
+            saveSession()
+            sessionSaved = true
+        }
+        tasks.removeAll(where: \.isCompleted)
+        activeTaskIndex = tasks.firstIndex { !$0.isCompleted }
+        completionTriggers.removeAll()
         savePlan()
     }
 
@@ -111,4 +132,5 @@ final class AppState {
         ctx.insert(SessionRecord(planTitle: title, tasks: tasks))
         try? ctx.save()
     }
+
 }

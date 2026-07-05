@@ -128,4 +128,51 @@ struct AppStateTests {
         state.updateTime(taskId: UUID(), minutes: 10)
         #expect(state.tasks[0].estimatedMinutes == nil)
     }
+
+    // MARK: - updateTask (Phase F edit)
+
+    @Test func updateTaskChangesTitleAndDescription() {
+        let state = AppState()
+        let task = TaskItem(title: "Old", description: "")
+        state.setTasks([task])
+        state.updateTask(id: task.id, title: "New", description: "Details")
+        #expect(state.tasks[0].title == "New")
+        #expect(state.tasks[0].description == "Details")
+    }
+
+    @Test func updateTaskIgnoresUnknownId() {
+        let state = AppState()
+        state.setTasks([TaskItem(title: "A")])
+        state.updateTask(id: UUID(), title: "X", description: "Y")
+        #expect(state.tasks[0].title == "A")
+    }
+
+    // MARK: - archiveCompleted (Phase F)
+
+    @Test func archiveCompletedRemovesDoneTasks() {
+        let state = AppState()
+        let a = TaskItem(title: "A")
+        let b = TaskItem(title: "B")
+        state.setTasks([a, b])
+        state.complete(task: a.id)
+        state.archiveCompleted()
+        #expect(state.tasks.count == 1)
+        #expect(state.tasks[0].title == "B")
+    }
+
+    @Test func archiveCompletedDoesNothingWhenNoneComplete() {
+        let state = AppState()
+        state.setTasks([TaskItem(title: "A")])
+        state.archiveCompleted()
+        #expect(state.tasks.count == 1)
+    }
+
+    @Test func archiveCompletedClearsCompletionTriggers() {
+        let state = AppState()
+        let a = TaskItem(title: "A")
+        state.setTasks([a])
+        state.complete(task: a.id)
+        state.archiveCompleted()
+        #expect(state.completionTriggers.isEmpty)
+    }
 }
