@@ -31,6 +31,20 @@ final class AppState {
         savePlan()
     }
 
+    // Appends new tasks to the existing list without discarding completed work.
+    // The merged list is re-encoded as JSON in PlanRecord so the full set survives restart.
+    func appendTasks(_ newTasks: [TaskItem]) {
+        tasks.append(contentsOf: newTasks)
+        activeTaskIndex = tasks.firstIndex { !$0.isCompleted }
+        savePlan()
+    }
+
+    func updateTime(taskId: UUID, minutes: Int?) {
+        guard let idx = tasks.firstIndex(where: { $0.id == taskId }) else { return }
+        tasks[idx].estimatedMinutes = minutes
+        savePlan()
+    }
+
     func complete(task id: UUID) {
         guard let idx = tasks.firstIndex(where: { $0.id == id }),
               !tasks[idx].isCompleted else { return }

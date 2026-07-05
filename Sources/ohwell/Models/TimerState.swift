@@ -20,6 +20,10 @@ final class TimerState {
     var isRunning: Bool = false
     var completedSessions: Int = 0
 
+    // Zen mode — no countdown; tracks elapsed time instead
+    var isZenMode: Bool = false
+    var zenElapsedSeconds: Int = 0
+
     private var timer: Timer?
 
     var progress: Double {
@@ -38,18 +42,42 @@ final class TimerState {
 
     func pause() {
         isRunning = false
+        isZenMode = false
         timer?.invalidate()
         timer = nil
     }
 
     func reset() {
         pause()
+        zenElapsedSeconds = 0
         secondsRemaining = duration(for: currentPhase)
+    }
+
+    // Starts an infinite zen session — no countdown, just elapsed time.
+    func zenStart() {
+        timer?.invalidate()
+        timer = nil
+        isZenMode = true
+        zenElapsedSeconds = 0
+        isRunning = true
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.tick() }
+        }
+    }
+
+    // Ends the zen session and returns to normal (paused) state.
+    func zenDone() {
+        isRunning = false
+        isZenMode = false
+        timer?.invalidate()
+        timer = nil
     }
 
     func tick() {
         guard isRunning else { return }
-        if secondsRemaining > 0 {
+        if isZenMode {
+            zenElapsedSeconds += 1
+        } else if secondsRemaining > 0 {
             secondsRemaining -= 1
         } else {
             advancePhase()
