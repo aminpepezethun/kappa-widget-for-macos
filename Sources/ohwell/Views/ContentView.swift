@@ -14,41 +14,41 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack {
+        VStack(spacing: 0) {
+            HeaderView()
+
+            Divider()
+                .background(appState.currentTheme.accentColor.opacity(0.2))
+                .padding(.horizontal, 16)
+
+            TimerView()
+                .padding(.top, 8)
+
+            Divider()
+                .background(appState.currentTheme.accentColor.opacity(0.2))
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+
+            if appState.tasks.isEmpty {
+                PlanInputView()
+                EmptyTaskStateView()
+            } else {
+                PlanInputView()
+                TaskListView()
+            }
+        }
+        // ponytail: gradient as background — keeps VStack as layout driver so sizeThatFits returns natural height
+        .background(
             LinearGradient(
                 colors: appState.currentTheme.backgroundGradient,
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                HeaderView()
-
-                Divider()
-                    .background(appState.currentTheme.accentColor.opacity(0.2))
-                    .padding(.horizontal, 16)
-
-                TimerView()
-                    .padding(.top, 8)
-
-                Divider()
-                    .background(appState.currentTheme.accentColor.opacity(0.2))
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-
-                if appState.tasks.isEmpty {
-                    PlanInputView()
-                    EmptyTaskStateView()
-                } else {
-                    PlanInputView()
-                    TaskListView()
-                }
-            }
-
-            ConfettiView()
-
-            // All-done celebration overlay
+        )
+        .overlay { ConfettiView() }
+        // All-done celebration overlay
+        .overlay {
             if showAllDoneOverlay {
                 VStack(spacing: 12) {
                     Image(systemName: "checkmark.seal.fill")
@@ -118,7 +118,8 @@ private struct EmptyTaskStateView: View {
                 .font(.system(.caption, design: appState.currentTheme.fontDesign))
                 .foregroundStyle(appState.currentTheme.accentColor.opacity(0.3))
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 32)
+        .padding(.vertical, 24)
     }
 }
