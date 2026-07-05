@@ -101,7 +101,7 @@ struct PlanInputView: View {
         let icons = appState.currentTheme.taskIcons
         let tasks = PlanParser.parse(text: planText, icons: icons)
         guard !tasks.isEmpty else { return }
-        appState.setTasks(tasks)
+        appState.setTasks(tasks, planText: planText)
         showingInput = false
         planText = ""
     }

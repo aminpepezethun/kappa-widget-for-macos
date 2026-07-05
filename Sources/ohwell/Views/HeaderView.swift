@@ -2,10 +2,10 @@ import SwiftUI
 
 struct HeaderView: View {
     @Environment(AppState.self) private var appState
+    @State private var showSettings = false
 
     var body: some View {
         HStack(spacing: 8) {
-            // App title
             Text("OhWell")
                 .font(.system(.headline, design: appState.currentTheme.fontDesign, weight: .semibold))
                 .foregroundStyle(appState.currentTheme.accentColor)
@@ -35,6 +35,20 @@ struct HeaderView: View {
                     .contentShape(Rectangle())
                     .help(theme.name)
                 }
+            }
+
+            // Settings
+            Button(action: { showSettings = true }) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 14))
+                    .foregroundStyle(appState.currentTheme.accentColor.opacity(0.7))
+            }
+            .buttonStyle(.plain)
+            .frame(width: 28, height: 28)
+            .contentShape(Rectangle())
+            .help("Settings")
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
             }
         }
         .padding(.horizontal, 16)

@@ -1,6 +1,6 @@
 import Foundation
 
-struct TaskItem: Identifiable, Sendable {
+struct TaskItem: Identifiable, Sendable, Codable {
     let id: UUID
     var title: String
     var isCompleted: Bool
