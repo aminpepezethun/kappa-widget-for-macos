@@ -6,6 +6,7 @@ struct TaskRowView: View {
     let isActive: Bool
     @State private var isHovered = false
     @State private var editingTime = false
+    @State private var editingTask = false
     @State private var draftMinutes: Int = 25
 
     var body: some View {
@@ -27,15 +28,24 @@ struct TaskRowView: View {
                 .frame(width: 24, height: 24)
                 .iconBouncer(style: appState.currentTheme.iconAnimationStyle, isActive: isActive && !task.isCompleted)
 
-            // Task title
-            Text(task.title)
-                .font(.system(.body, design: appState.currentTheme.fontDesign))
-                .foregroundStyle(task.isCompleted
-                    ? appState.currentTheme.accentColor.opacity(0.5)
-                    : appState.currentTheme.accentColor)
-                .strikethrough(task.isCompleted, color: appState.currentTheme.accentColor.opacity(0.5))
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // Title + optional description
+            VStack(alignment: .leading, spacing: 2) {
+                Text(task.title)
+                    .font(.system(.body, design: appState.currentTheme.fontDesign))
+                    .foregroundStyle(task.isCompleted
+                        ? appState.currentTheme.accentColor.opacity(0.5)
+                        : appState.currentTheme.accentColor)
+                    .strikethrough(task.isCompleted, color: appState.currentTheme.accentColor.opacity(0.5))
+                    .lineLimit(2)
+
+                if !task.description.isEmpty {
+                    Text(task.description)
+                        .font(.system(.caption2, design: appState.currentTheme.fontDesign))
+                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
+                        .lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             // Time badge — tap to edit estimatedMinutes
             Group {
@@ -73,9 +83,29 @@ struct TaskRowView: View {
                 )
             }
             .onChange(of: editingTime) { _, isOpen in
-                // Commit when popover closes; nil clears the badge
                 if !isOpen {
                     appState.updateTime(taskId: task.id, minutes: draftMinutes == 0 ? nil : draftMinutes)
+                }
+            }
+
+            // Edit button (pencil) — only on incomplete tasks
+            if !task.isCompleted && isHovered {
+                Button(action: { editingTask = true }) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 12))
+                        .foregroundStyle(appState.currentTheme.accentColor.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+                .frame(width: 20, height: 20)
+                .popover(isPresented: $editingTask, arrowEdge: .trailing) {
+                    TaskEditorView(
+                        task: task,
+                        accentColor: appState.currentTheme.accentColor,
+                        fontDesign: appState.currentTheme.fontDesign,
+                        onSave: { newTitle, newDesc in
+                            appState.updateTask(id: task.id, title: newTitle, description: newDesc)
+                        }
+                    )
                 }
             }
 
@@ -128,6 +158,74 @@ struct TaskRowView: View {
             let m = minutes % 60
             return m == 0 ? "\(h)h" : "\(h)h\(m)m"
         }
+    }
+}
+
+// MARK: - Task editor popover
+
+private struct TaskEditorView: View {
+    let task: TaskItem
+    let accentColor: Color
+    let fontDesign: Font.Design
+    let onSave: (String, String) -> Void
+
+    @State private var draftTitle: String
+    @State private var draftDescription: String
+    @Environment(\.dismiss) private var dismiss
+
+    init(task: TaskItem, accentColor: Color, fontDesign: Font.Design,
+         onSave: @escaping (String, String) -> Void) {
+        self.task = task
+        self.accentColor = accentColor
+        self.fontDesign = fontDesign
+        self.onSave = onSave
+        _draftTitle = State(initialValue: task.title)
+        _draftDescription = State(initialValue: task.description)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Edit Task")
+                .font(.system(.callout, design: fontDesign, weight: .semibold))
+                .foregroundStyle(accentColor)
+
+            TextField("Title", text: $draftTitle)
+                .font(.system(.body, design: fontDesign))
+                .textFieldStyle(.roundedBorder)
+
+            TextField("Description (optional)", text: $draftDescription)
+                .font(.system(.callout, design: fontDesign))
+                .textFieldStyle(.roundedBorder)
+
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .font(.system(.callout, design: fontDesign))
+                    .foregroundStyle(accentColor.opacity(0.6))
+                    .buttonStyle(.plain)
+
+                Spacer()
+
+                Button("Save") {
+                    let t = draftTitle.trimmingCharacters(in: .whitespaces)
+                    guard !t.isEmpty else { return }
+                    onSave(t, draftDescription.trimmingCharacters(in: .whitespaces))
+                    dismiss()
+                }
+                .font(.system(.callout, design: fontDesign, weight: .medium))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule().fill(draftTitle.trimmingCharacters(in: .whitespaces).isEmpty
+                        ? accentColor.opacity(0.3)
+                        : accentColor)
+                )
+                .buttonStyle(.plain)
+                .disabled(draftTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(14)
+        .frame(width: 260)
     }
 }
 

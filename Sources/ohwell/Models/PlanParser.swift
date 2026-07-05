@@ -15,7 +15,7 @@ struct PlanParser {
             guard !trimmed.isEmpty else { continue }
 
             var title = stripBullet(trimmed)
-            let minutes = extractTime(from: &title)
+            let minutes = extractTime(from: &title) ?? 25   // default to 25 min
             let icon = icons.isEmpty ? "circle" : icons[index % icons.count]
 
             items.append(TaskItem(title: title, estimatedMinutes: minutes, iconSymbol: icon))

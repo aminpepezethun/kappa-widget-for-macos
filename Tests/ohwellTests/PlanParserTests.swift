@@ -74,9 +74,15 @@ struct PlanParserTests {
         #expect(result[0].title == "Deep work")
     }
 
-    @Test func noTimeHintYieldsNil() {
+    @Test func noTimeHintDefaultsTwentyFiveMinutes() {
+        // When no time hint is present, tasks default to 25 min
         let result = PlanParser.parse(text: "Buy milk")
-        #expect(result[0].estimatedMinutes == nil)
+        #expect(result[0].estimatedMinutes == 25)
+    }
+
+    @Test func explicitTimeHintOverridesDefault() {
+        let result = PlanParser.parse(text: "Write report ~10min")
+        #expect(result[0].estimatedMinutes == 10)
     }
 
     // MARK: - Multi-line
