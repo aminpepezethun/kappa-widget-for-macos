@@ -5,6 +5,7 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
+    private var hostingController: NSHostingController<AnyView>?
     private let appState = AppState()
     private let timerState = TimerState()
     private let historyState = HistoryState()
@@ -22,6 +23,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupStatusItem()
         setupPopover()
+
+        // Resize popover whenever task count changes
+        updatePopoverSize()
+        observeTaskCount()
     }
 
     private func setupStatusItem() {
@@ -34,17 +39,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupPopover() {
+        let hc = NSHostingController(
+            rootView: AnyView(
+                ContentView()
+                    .environment(appState)
+                    .environment(timerState)
+                    .environment(historyState)
+                    .environment(audioManager)
+            )
+        )
+        hostingController = hc
+
         let popover = NSPopover()
         popover.contentSize = NSSize(width: 320, height: 480)
         popover.behavior = .transient
-        popover.contentViewController = NSHostingController(
-            rootView: ContentView()
-                .environment(appState)
-                .environment(timerState)
-                .environment(historyState)
-                .environment(audioManager)
-        )
+        popover.contentViewController = hc
         self.popover = popover
+    }
+
+    private func updatePopoverSize() {
+        guard let hc = hostingController, let popover else { return }
+        let fit = hc.sizeThatFits(in: NSSize(width: 320, height: 9999))
+        let maxH = (NSScreen.main?.visibleFrame.height ?? 800) * 0.85
+        popover.contentSize = NSSize(width: 320, height: min(fit.height, maxH))
+    }
+
+    // withObservationTracking fires once per call — re-register on each change.
+    private func observeTaskCount() {
+        withObservationTracking {
+            _ = appState.tasks.count
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.updatePopoverSize()
+                self?.observeTaskCount()
+            }
+        }
     }
 
     @objc private func togglePopover() {

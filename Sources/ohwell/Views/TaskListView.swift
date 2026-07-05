@@ -5,22 +5,20 @@ struct TaskListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Scrollable task list
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    ForEach(appState.tasks) { task in
-                        TaskRowView(
-                            task: task,
-                            isActive: appState.activeTaskIndex.map {
-                                appState.tasks[$0].id == task.id
-                            } ?? false
-                        )
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
+            // ponytail: plain VStack — no NSScrollView inside NSPopover (crashes FirstResponderObserver on hover)
+            VStack(spacing: 8) {
+                ForEach(appState.tasks) { task in
+                    TaskRowView(
+                        task: task,
+                        isActive: appState.activeTaskIndex.map {
+                            appState.tasks[$0].id == task.id
+                        } ?? false
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             .animation(.spring(duration: 0.3), value: appState.tasks.count)
 
             // Progress footer
