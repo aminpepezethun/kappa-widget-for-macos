@@ -4,6 +4,7 @@ enum Soundscape: String, CaseIterable, Sendable {
     case whiteNoise = "white-noise"
     case cafe = "cafe"
     case bird = "bird"
+    case custom = "custom"
 
     var label: String {
         switch self {
@@ -12,6 +13,7 @@ enum Soundscape: String, CaseIterable, Sendable {
         case .whiteNoise: return "White Noise"
         case .cafe:       return "Café"
         case .bird:       return "Bird"
+        case .custom:     return "Custom"
         }
     }
 
@@ -22,6 +24,7 @@ enum Soundscape: String, CaseIterable, Sendable {
         case .whiteNoise: return "waveform"
         case .cafe:       return "cup.and.saucer"
         case .bird:       return "bird"
+        case .custom:     return "music.note"
         }
     }
 }
