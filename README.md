@@ -48,6 +48,33 @@ swift run ohwell
 
 ---
 
+## Installing as a macOS App
+
+To use OhWell like a real app — launching from `/Applications`, surviving restarts, no terminal needed — run the bundler script:
+
+```bash
+bash make-app.sh
+```
+
+This will:
+1. Build a release binary (`swift build --configuration release`)
+2. Create `OhWell.app` with the correct bundle structure
+3. Ad-hoc sign it so macOS accepts it
+4. Copy it to `/Applications`
+
+**First launch after install:** right-click `OhWell.app` → **Open** (macOS will ask once to confirm an unsigned app — after that it opens normally).
+
+### Requirements
+- macOS 14 (Sonoma) or later
+- Xcode or Xcode Command Line Tools installed (`xcode-select --install`)
+
+### Uninstall
+```bash
+rm -rf /Applications/OhWell.app
+```
+
+---
+
 ## Creating a Custom Theme
 
 Conform to the `Theme` protocol and you have full control over colors, icons, particles, and animation style:
