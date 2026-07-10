@@ -25,7 +25,7 @@ final class OhWellUITests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        app.terminate()
+        app?.terminate()
     }
 
     // MARK: - Popover
