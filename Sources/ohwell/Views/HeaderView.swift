@@ -3,8 +3,6 @@ import SwiftUI
 struct HeaderView: View {
     @Environment(AppState.self) private var appState
     @Environment(HistoryState.self) private var historyState
-    @State private var showSettings = false
-    @State private var showSessionDisk = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -17,7 +15,7 @@ struct HeaderView: View {
             // Session disk button
             Button(action: {
                 historyState.refresh()
-                showSessionDisk = true
+                appState.showSessionDisk = true
             }) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "opticaldisc")
@@ -39,9 +37,6 @@ struct HeaderView: View {
             .frame(width: 28, height: 28)
             .contentShape(Rectangle())
             .help("Sessions")
-            .popover(isPresented: $showSessionDisk, arrowEdge: .bottom) {
-                SessionDiskView()
-            }
 
             // Theme picker
             HStack(spacing: 10) {
@@ -69,7 +64,7 @@ struct HeaderView: View {
             }
 
             // Settings
-            Button(action: { showSettings = true }) {
+            Button(action: { appState.showSettings = true }) {
                 Image(systemName: "gearshape")
                     .font(.system(size: 14))
                     .foregroundStyle(appState.currentTheme.accentColor.opacity(0.7))
@@ -78,9 +73,6 @@ struct HeaderView: View {
             .frame(width: 28, height: 28)
             .contentShape(Rectangle())
             .help("Settings")
-            .sheet(isPresented: $showSettings) {
-                SettingsView()
-            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -89,10 +81,9 @@ struct HeaderView: View {
 
 // MARK: - Session disk popover
 
-private struct SessionDiskView: View {
+struct SessionDiskView: View {
     @Environment(AppState.self) private var appState
     @Environment(HistoryState.self) private var historyState
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -104,7 +95,7 @@ private struct SessionDiskView: View {
                 Spacer()
                 Button("New Plan") {
                     appState.setTasks([], planText: "")
-                    dismiss()
+                    appState.showSessionDisk = false
                 }
                 .font(.system(.caption, design: appState.currentTheme.fontDesign, weight: .medium))
                 .foregroundStyle(appState.currentTheme.accentColor)
@@ -133,7 +124,7 @@ private struct SessionDiskView: View {
                     ForEach(historyState.sessions.prefix(5)) { session in
                         Button(action: {
                             historyState.restore(session: session, into: appState)
-                            dismiss()
+                            appState.showSessionDisk = false
                         }) {
                             HStack(spacing: 8) {
                                 Circle()
@@ -169,7 +160,6 @@ private struct SessionDiskView: View {
                 }
             }
         }
-        .frame(width: 270)
         .onAppear { historyState.refresh() }
     }
 }

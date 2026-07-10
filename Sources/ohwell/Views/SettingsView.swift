@@ -5,7 +5,6 @@ struct SettingsView: View {
     @Environment(HistoryState.self) private var historyState
     @Environment(AudioManager.self) private var audioManager
     @Environment(TimerState.self) private var timerState
-    @Environment(\.dismiss) private var dismiss
     @State private var selectedTab = 0
 
     var body: some View {
@@ -18,7 +17,7 @@ struct SettingsView: View {
 
                 Spacer()
 
-                Button("Done") { dismiss() }
+                Button("Done") { appState.showSettings = false }
                     .font(.system(.callout, weight: .medium))
                     .foregroundStyle(appState.currentTheme.accentColor)
                     .buttonStyle(.plain)

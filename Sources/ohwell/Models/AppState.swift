@@ -14,6 +14,10 @@ final class AppState {
     private var sessionSaved = false
     var currentSessionId: UUID? = nil
 
+    // Presentation flags — observed by AppDelegate to show native windows
+    var showSettings = false
+    var showSessionDisk = false
+
     var availableThemes: [any Theme] {
         // Add more themes here
         [ForestTheme(), SpaceTheme(), MinimalTheme()]

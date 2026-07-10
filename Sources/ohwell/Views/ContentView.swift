@@ -47,6 +47,15 @@ struct ContentView: View {
             .ignoresSafeArea()
         )
         .overlay { ConfettiView() }
+        // ponytail: session disk shown inline — avoids PopoverBridge/FirstResponderObserver crash
+        .overlay(alignment: .top) {
+            if appState.showSessionDisk {
+                SessionDiskView()
+                    .background(.regularMaterial)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.25), value: appState.showSessionDisk)
         // All-done celebration overlay
         .overlay {
             if showAllDoneOverlay {
